@@ -11,8 +11,8 @@ MedGuide AI is a web-based medical education assistant. It combines retrieval fr
 - [Requirements](#requirements)
 - [Setup](#setup)
 - [Configuration](#configuration)
-- [Run the application](#run-the-application)
 - [Index the medical reference](#index-the-medical-reference)
+- [Run the application](#run-the-application)
 - [API reference](#api-reference)
 - [Data and privacy](#data-and-privacy)
 - [Troubleshooting](#troubleshooting)
@@ -102,9 +102,25 @@ ALLOWED_ORIGINS=http://localhost:8000,http://127.0.0.1:8000
 
 Environment variables are loaded from `.env` in the current working directory. Start the server from the repository root so the expected `.env` and SQLite database paths are used.
 
+## Index the medical reference
+
+Before starting the application for the first time, index the bundled PDF so it can answer questions using the local reference. With credentials configured, run this from the repository root:
+
+```powershell
+python ingest.py
+```
+
+To index another PDF:
+
+```powershell
+python ingest.py --pdf "C:\path\to\your-reference.pdf"
+```
+
+The ingestion process extracts text page by page, splits it into overlapping chunks, creates the configured Pinecone index if needed, generates embeddings, and upserts vectors. It makes paid/provider API calls and may take time for a large PDF. Re-running ingestion upserts matching chunks; changed or removed source content can leave older vectors in the index, so use a fresh index when you need a clean rebuild.
+
 ## Run the application
 
-From the repository root with the virtual environment active:
+After indexing the reference, start the app from the repository root with the virtual environment active:
 
 ```powershell
 python -m uvicorn app.main:app --reload
@@ -121,22 +137,6 @@ Invoke-RestMethod http://127.0.0.1:8000/api/health
 The health response reports whether the required OpenAI and Pinecone keys are configured and whether Tavily is configured. It does not verify provider credentials, network connectivity, or Pinecone index readiness.
 
 Stop the development server with **Ctrl+C**.
-
-## Index the medical reference
-
-The bundled PDF is `data/Medical_book.pdf`. With credentials configured, run:
-
-```powershell
-python ingest.py
-```
-
-To index another PDF:
-
-```powershell
-python ingest.py --pdf "C:\path\to\your-reference.pdf"
-```
-
-The ingestion process extracts text page by page, splits it into overlapping chunks, creates the configured Pinecone index if needed, generates embeddings, and upserts vectors. It makes paid/provider API calls and may take time for a large PDF. Re-running ingestion upserts matching chunks; changed or removed source content can leave older vectors in the index, so use a fresh index when you need a clean rebuild.
 
 ## API reference
 
